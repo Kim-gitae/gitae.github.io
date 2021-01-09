@@ -6,7 +6,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     
-    <img src="C:\Users\김기태\Desktop\GT.jpg">
+    <img src="https://user-images.githubusercontent.com/74646048/104090543-c35d5300-52ba-11eb-9b17-3ccb3c0aea5f.jpg">
     
     <title>Freelancer - Start Bootstrap Theme</title>
 

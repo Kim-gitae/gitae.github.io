@@ -1,11 +1,13 @@
 <head>
-
+    
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
-
+    
+    <img src="img/face/GT.png" class="img-responsive" alt="GT">
+    
     <title>Freelancer - Start Bootstrap Theme</title>
 
     <!-- Bootstrap Core CSS -->

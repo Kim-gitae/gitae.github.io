@@ -73,7 +73,7 @@
             <img src="https://user-images.githubusercontent.com/74646048/104090543-c35d5300-52ba-11eb-9b17-3ccb3c0aea5f.jpg" width="25%" height="25%" align="left">
             <div class="row">
                 <div class="col-lg-4 col-lg-offset-2">
-                    <p   </p>
+                    <p>   </p>
                     <p>김기태</p>
                     <p>1997.04.01</p>
                     <p>010-9521-9579</p>

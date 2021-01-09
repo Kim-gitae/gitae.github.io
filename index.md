@@ -3,8 +3,6 @@
 
 
 <html lang="en">
-    
-<img src="https://user-images.githubusercontent.com/74646048/104090543-c35d5300-52ba-11eb-9b17-3ccb3c0aea5f.jpg" width="30%" height="30%">
 
 <head>
 
@@ -72,13 +70,14 @@
                     <hr class="star-light">
                 </div>
             </div>
+            <img src="https://user-images.githubusercontent.com/74646048/104090543-c35d5300-52ba-11eb-9b17-3ccb3c0aea5f.jpg" width="10%" height="10%"></right>
             <div class="row">
                 <div class="col-lg-4 col-lg-offset-2">
-                    <p>김기태.
+                    김기태
                     1997.04.01
                     010-9521-9579
                     Republic of Korea, Ulsan
-                    gt0401@naver.com</p>
+                    gt0401@naver.com
                 </div>
                 <div class="col-lg-4">
                     <p>Whether you're a student looking to showcase your work, a professional looking to attract clients, or a graphic artist looking to share your projects, this template is the perfect starting point!</p>

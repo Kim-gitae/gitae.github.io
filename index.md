@@ -70,9 +70,10 @@
                     <hr class="star-light">
                 </div>
             </div>
-            <img src="https://user-images.githubusercontent.com/74646048/104090543-c35d5300-52ba-11eb-9b17-3ccb3c0aea5f.jpg" width="25%" height="25%" align="right">
+            <img src="https://user-images.githubusercontent.com/74646048/104090543-c35d5300-52ba-11eb-9b17-3ccb3c0aea5f.jpg" width="25%" height="25%" align="left">
             <div class="row">
                 <div class="col-lg-4 col-lg-offset-2">
+                    <p   </p>
                     <p>김기태</p>
                     <p>1997.04.01</p>
                     <p>010-9521-9579</p>
@@ -80,7 +81,8 @@
                     <p>gt0401@naver.com</p>
                 </div>
                 <div class="col-lg-4">
-                    <p>Whether you're a student looking to showcase your work, a professional looking to attract clients, or a graphic artist looking to share your projects, this template is the perfect starting point!</p>
+                <h2>About me</h2>
+                    <p></p>
                 </div>
                 <div class="col-lg-8 col-lg-offset-2 text-center">
                     <a href="#" class="btn btn-lg btn-outline">

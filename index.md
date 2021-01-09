@@ -6,7 +6,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     
-    <img src="https://user-images.githubusercontent.com/74646048/104090543-c35d5300-52ba-11eb-9b17-3ccb3c0aea5f.jpg">
+    <img src="https://user-images.githubusercontent.com/74646048/104090543-c35d5300-52ba-11eb-9b17-3ccb3c0aea5f.jpg" width="30%" height="30%">
     
     <title>Freelancer - Start Bootstrap Theme</title>
 

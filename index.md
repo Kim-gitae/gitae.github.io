@@ -6,7 +6,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     
-    <img src="img/face/GT.png" class="img-responsive" alt="GT">
+    <img src="img/face/GT.jpg" class="img-responsive" alt="GT">
     
     <title>Freelancer - Start Bootstrap Theme</title>
 

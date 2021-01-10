@@ -1,0 +1,138 @@
+import bluetooth
+
+import RPi.GPIO as GPIO
+
+ 
+
+server_socket=bluetooth.BluetoothSocket( bluetooth.RFCOMM)
+
+ 
+
+in1 = 24
+
+in2 = 23
+
+en1 = 25
+
+in3 = 27
+
+in4 = 17
+
+en2 = 22
+
+ 
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(3, GPIO.OUT)
+
+GPIO.setup(in1,GPIO.OUT)
+
+GPIO.setup(in2,GPIO.OUT)
+
+GPIO.setup(en1,GPIO.OUT)
+
+GPIO.output(in1,GPIO.LOW)
+
+GPIO.output(in2,GPIO.LOW)
+
+p1=GPIO.PWM(en1,100)
+
+GPIO.setup(in3,GPIO.OUT)
+
+GPIO.setup(in4,GPIO.OUT)
+
+GPIO.setup(en2,GPIO.OUT)
+
+GPIO.output(in3,GPIO.LOW)
+
+GPIO.output(in4,GPIO.LOW)
+
+p2=GPIO.PWM(en2,100)
+
+p3 = GPIO.PWM(3, 50)
+
+speed = 0 
+
+p1.start(speed)
+
+p2.start(speed)
+
+p3.start(0) 
+
+
+port = 1
+
+server_socket.bind(("",port))
+
+server_socket.listen(1)
+
+f = 7.5
+ 
+
+client_socket,address = server_socket.accept()
+
+print("Accepted connection from ",address)
+
+client_socket.send("hello")
+
+ 
+
+while(1):
+
+ data = client_socket.recv(1024).decode('utf-8')
+
+ print(data)
+
+ if date == 'b':
+  f = f + 1
+  P3.ChangeDutyCycle(f)
+  if f>11:
+   f=10.5
+
+ if date == 'c':
+  f = f - 1
+  P3.ChangeDutyCycle(f)
+  if f<4:
+   f=4.5
+ 
+ if data == 'a':
+   if speed > 20:
+    speed = speed+10
+    print("forward")
+    P1.ChangeDutyCycle(20 + speed)
+    P2.ChangeDutyCycle(20 + speed)
+   if speed < 20:
+    speed = speed+10
+    P1.ChangeDutyCycle(speed)
+    P2.ChangeDutyCycle(speed)
+    GPIO.output(in1,GPIO.LOW)
+    GPIO.output(in2,GPIO.HIGH)
+    GPIO.output(in3,GPIO.LOW)
+    GPIO.output(in4,GPIO.HIGH)   
+
+ elif date == 'd':
+   if speed > 0:
+    speed = speed-10
+    print("backward")
+    P1.ChangeDutyCycle(speed)
+    P2.ChangeDutyCycle(speed)
+   elif speed < 0:
+    speed = speed-10
+    P1.ChangeDutyCycle(20-speed)
+    P2.ChangeDutyCycle(20-speed)
+    GPIO.output(in1,GPIO.LOW)
+    GPIO.output(in2,GPIO.HIGH)
+    GPIO.output(in3,GPIO.LOW)
+    GPIO.output(in4,GPIO.HIGH)   
+
+ elif date == 'e':
+
+  P1.ChangeDutyCycle(0)
+  P2.ChangeDutyCycle(0)
+
+ GPIO.output(in1,GPIO.HIGH)
+ GPIO.output(in2,GPIO.LOW)
+ GPIO.output(in3,GPIO.HIGH)
+ GPIO.output(in4,GPIO.LOW)
+
+client_socket.close()

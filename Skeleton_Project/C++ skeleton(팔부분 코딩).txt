@@ -1,0 +1,141 @@
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/dnn.hpp>
+#include <stdio.h>
+
+using namespace cv;
+using namespace cv::dnn;
+using namespace std;
+static const std::string OPENCV_WINDOW = "Image window";
+int nPoints = 8;
+//int nPoints = 15;
+/*const int POSE_PAIRS[3][20][2] = {
+{   //hand
+	{ 0,1 },{ 1,2 },{ 2,3 },{ 3,4 },         // thumb
+	{ 0,5 },{ 5,6 },{ 6,7 },{ 7,8 },         // pinkie
+	{ 0,9 },{ 9,10 },{ 10,11 },{ 11,12 },    // middle
+	{ 0,13 },{ 13,14 },{ 14,15 },{ 15,16 },  // ring
+	{ 0,17 },{ 17,18 },{ 18,19 },{ 19,20 }   // small
+},
+// MPI body
+const int POSE_PAIRS[14][2] =
+{
+	{ 0,1 },{ 1,2 },{ 2,3 },
+	{ 3,4 },{ 1,5 },{ 5,6 },
+	{ 6,7 },{ 1,14 },{ 14,8 },{ 8,9 },
+	{ 9,10 },{ 14,11 },{ 11,12 },{ 12,13 }
+}
+// COCO body
+const int POSE_PAIRS[17][2] =
+{
+	{ 1,2 },{ 1,5 },{ 2,3 },
+	{ 3,4 },{ 5,6 },{ 6,7 },
+	{ 1,8 },{ 8,9 },{ 9,10 },
+	{ 1,11 },{ 11,12 },{ 12,13 },
+	{ 1,0 },{ 0,14 },
+	{ 14,16 },{ 0,15 },{ 15,17 }
+} };*/
+const int POSE_PAIRS[7][2] =
+{
+	{ 0,1 },{ 1,2 },{ 2,3 },
+	{ 3,4 },{ 1,5 },{ 5,6 },
+	{ 6,7 }//,{ 1,14 },{ 14,8 },{ 8,9 },
+//	{ 9,10 },{ 14,11 },{ 11,12 },{ 12,13 }
+};
+
+
+int main(int ac, char** av) {
+
+	//웹캠을 연결하는 경우에는 웹캠에 해당하는 동영상 화면(frame)을 읽어온다.
+	//VideoCapture cap(device;로 연결된 영상 장치 index
+	VideoCapture cap(0);
+
+	string protoFile = "pose/coco/pose_deploy_linevec.prototxt";
+	string weightsFile = "pose/coco/pose_iter_440000.caffemodel";
+
+	// Read the network into Memory
+	Net net = readNetFromCaffe(protoFile, weightsFile);
+	//영상이 제대로 읽혔는지 확인하기 위한 함수 cap.isOpened() *오류를 잡기위한 부분
+	if (!cap.isOpened())
+	{
+		printf("Can't open the camera");
+		return -1;
+	}
+
+	//Mat img_1;
+	Mat img;
+
+	//img = img_1(Rect(120, 90,590, 477));
+	//img = img_1(Rect(Point(120,90), Point(590,477)));
+	//int fps = (int)cap.get(144);
+	while (1)
+	{
+		cap >> img;
+		//추출하려는 스트리밍 영상을 넣고, 영상의 데이터 스케일을 0~1 사이의 실수값으로, 그리고 영상의 사이즈는 150x110로 해줍니다. 
+		//평균값을 (0,0,0)으로 두고, 채널 교체는 할 필요 없으니 뒤에는 false.
+		//채널이라는 것은, 컬러를 표현하는 순서, 보통 RGB라고 말하지만, OpenCV에서는 BGR
+		int inWidth = img.cols;
+		int inHeight = img.rows;
+		cv::Mat inpBlob = blobFromImage(img, 1.0 / 255, cv::Size(120,110), cv::Scalar(0, 0, 0), false, false);
+		//몸 전체 cv::Mat inpBlob = blobFromImage(img, 1.0 / 255, cv::Size(140,120), cv::Scalar(0, 0, 0), false, false);
+		//이미지 blob을 추출
+		net.setInput(inpBlob);
+
+		//만들어진 신경망 모델을 사용
+		cv::Mat output = net.forward(); //forward는 net의 메서드(서브 루틴) 이름이기 때문에 클래스 객체 없이는 사용할 수 없다.
+		//영상에서 resize한 사이즈로 신체를 마킹하는 부분
+		//출력 키포인트 출력
+		int H = output.size[2];
+		int W = output.size[3];
+		//찾은 점에 대해서 영상에 찍어주는 부분
+		vector<Point> points(nPoints);
+		for (int n = 0; n < nPoints; n++)
+		{
+			// Probability map of corresponding body's part.
+			Mat probMap(H, W, CV_32F, output.ptr(0, n));
+
+			Point2f p(-1, -1);
+			Point maxLoc;
+			double prob;
+			minMaxLoc(probMap, 0, &prob, 0, &maxLoc);
+			if (prob > 0.1)
+			{
+				p = maxLoc;
+				p.x *= (float)inWidth / W;
+				p.y *= (float)inHeight / H;
+				circle(img, cv::Point((int)p.x, (int)p.y), 5, Scalar(0, 255, 255), -1);
+				cv::putText(img, cv::format("%d", n), cv::Point((int)p.x, (int)p.y), cv::FONT_HERSHEY_COMPLEX, 1, cv::Scalar(0, 0, 255), 2);
+			}
+			points[n] = p;
+		}
+		//출력한 좌표로 선을 이어주는 부분
+		//가장 위에 나타난 그림처럼, 각 점을 이어, 선을 만들려면,각각의 번호가 어디에 연결된지확인하기 위해 
+		//int nPairs = sizeof(POSE_PAIRS) / sizeof(POSE_PAIRS[0]);
+		//원본 코드에 각 모델별 pairs를 사용 -> for (int n = 0; n < nPairs; n++)
+		int nPairs = sizeof(POSE_PAIRS) / sizeof(POSE_PAIRS[0]);
+		for (int n = 0; n < nPairs; n++)
+		{
+			// lookup 2 connected body/hand parts
+			Point2f partA = points[POSE_PAIRS[n][0]];
+			Point2f partB = points[POSE_PAIRS[n][1]];
+
+			if (partA.x <= 0 || partA.y <= 0 || partB.x <= 0 || partB.y <= 0)
+				continue;
+
+			line(img, partA, partB, Scalar(0, 255, 255), 5);
+			circle(img, partA, 5, Scalar(0, 0, 255), -1);
+			circle(img, partB, 5, Scalar(0, 0, 255), -1);
+		}
+		//영상 출력하는 부분
+		//Mat img = img(Rect(200, 200, 300, 600));
+		imshow("Skeleton avi", img);
+		//영상 프레임속도 waitKey(Wait_Time)
+		//waitKey(Wait_Time) 를 통한 재생속도 조절
+		if (waitKey(1) == 27)
+			break;
+	}
+
+	cap.release();
+	return 0;
+}

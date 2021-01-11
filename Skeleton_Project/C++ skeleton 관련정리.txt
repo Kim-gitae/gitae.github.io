@@ -1,0 +1,165 @@
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui.hpp>
+#include <opencv2/dnn.hpp>
+#include <stdio.h>
+
+using namespace cv;
+using namespace cv::dnn;
+using namespace std;
+static const std::string OPENCV_WINDOW = "Image window";
+int nPoints = 8;
+//int nPoints = 15;
+/*const int POSE_PAIRS[3][20][2] = {
+{   //hand
+	{ 0,1 },{ 1,2 },{ 2,3 },{ 3,4 },         // thumb
+	{ 0,5 },{ 5,6 },{ 6,7 },{ 7,8 },         // pinkie
+	{ 0,9 },{ 9,10 },{ 10,11 },{ 11,12 },    // middle
+	{ 0,13 },{ 13,14 },{ 14,15 },{ 15,16 },  // ring
+	{ 0,17 },{ 17,18 },{ 18,19 },{ 19,20 }   // small
+},
+// MPI body
+const int POSE_PAIRS[14][2] =
+{
+	{ 0,1 },{ 1,2 },{ 2,3 },
+	{ 3,4 },{ 1,5 },{ 5,6 },
+	{ 6,7 },{ 1,14 },{ 14,8 },{ 8,9 },
+	{ 9,10 },{ 14,11 },{ 11,12 },{ 12,13 }
+}
+// COCO body
+const int POSE_PAIRS[17][2] =
+{
+	{ 1,2 },{ 1,5 },{ 2,3 },
+	{ 3,4 },{ 5,6 },{ 6,7 },
+	{ 1,8 },{ 8,9 },{ 9,10 },
+	{ 1,11 },{ 11,12 },{ 12,13 },
+	{ 1,0 },{ 0,14 },
+	{ 14,16 },{ 0,15 },{ 15,17 }
+} };*/
+const int POSE_PAIRS[7][2] =
+{
+	{ 0,1 },{ 1,2 },{ 2,3 },
+	{ 3,4 },{ 1,5 },{ 5,6 },
+	{ 6,7 }//,{ 1,14 },{ 14,8 },{ 8,9 },
+//	{ 9,10 },{ 14,11 },{ 11,12 },{ 12,13 }
+};
+
+
+int main(int ac, char** av) {
+
+	//웹캠을 연결하는 경우에는 웹캠에 해당하는 동영상 화면(frame)을 읽어온다.
+	//VideoCapture cap(device;로 연결된 영상 장치 index
+	VideoCapture cap(0);
+
+	string protoFile = "pose/coco/pose_deploy_linevec.prototxt";
+	string weightsFile = "pose/coco/pose_iter_440000.caffemodel";
+
+	// Read the network into Memory
+	Net net = readNetFromCaffe(protoFile, weightsFile);
+	//영상이 제대로 읽혔는지 확인하기 위한 함수 cap.isOpened() *오류를 잡기위한 부분
+	if (!cap.isOpened())
+	{
+		printf("Can't open the camera");
+		return -1;
+	}
+
+	Mat img;
+
+	while (1)
+	{
+		cap >> img;
+		//추출하려는 스트리밍 영상을 넣고, 영상의 데이터 스케일을 0~1 사이의 실수값으로, 그리고 영상의 사이즈는 150x110로 해줍니다. 
+		//평균값을 (0,0,0)으로 두고, 채널 교체는 할 필요 없으니 뒤에는 false.
+		//채널이라는 것은, 컬러를 표현하는 순서, 보통 RGB라고 말하지만, OpenCV에서는 BGR
+		int inWidth = img.cols;
+		int inHeight = img.rows;
+		cv::Mat inpBlob = blobFromImage(img, 1.0 / 255, cv::Size(120,110), cv::Scalar(0, 0, 0), false, false);
+		//몸 전체 cv::Mat inpBlob = blobFromImage(img, 1.0 / 255, cv::Size(140,120), cv::Scalar(0, 0, 0), false, false);
+		//이미지 blob을 추출
+		net.setInput(inpBlob);
+
+		//만들어진 신경망 모델을 사용
+		cv::Mat output = net.forward(); //forward는 net의 메서드(서브 루틴) 이름이기 때문에 클래스 객체 없이는 사용할 수 없다.
+		//영상에서 resize한 사이즈로 신체를 마킹하는 부분
+		//출력 키포인트 출력
+		int H = output.size[2];
+		int W = output.size[3];
+		//찾은 점에 대해서 영상에 찍어주는 부분
+		vector<Point> points(nPoints);
+		for (int n = 0; n < nPoints; n++)
+		{
+			// Probability map of corresponding body's part.
+			Mat probMap(H, W, CV_32F, output.ptr(0, n));
+
+			Point2f p(-1, -1);
+			Point maxLoc;
+			double prob;
+			minMaxLoc(probMap, 0, &prob, 0, &maxLoc);
+			if (prob > 0.1)
+			{
+				p = maxLoc;
+				p.x *= (float)inWidth / W;
+				p.y *= (float)inHeight / H;
+				circle(img, cv::Point((int)p.x, (int)p.y), 5, Scalar(0, 255, 255), -1);
+				cv::putText(img, cv::format("%d", n), cv::Point((int)p.x, (int)p.y), cv::FONT_HERSHEY_COMPLEX, 1, cv::Scalar(0, 0, 255), 2);
+			}
+			points[n] = p;
+		}
+		//출력한 좌표로 선을 이어주는 부분
+		//가장 위에 나타난 그림처럼, 각 점을 이어, 선을 만들려면,각각의 번호가 어디에 연결된지확인하기 위해 
+		//int nPairs = sizeof(POSE_PAIRS) / sizeof(POSE_PAIRS[0]);
+		//원본 코드에 각 모델별 pairs를 사용 -> for (int n = 0; n < nPairs; n++)
+		int nPairs = sizeof(POSE_PAIRS) / sizeof(POSE_PAIRS[0]);
+		for (int n = 0; n < nPairs; n++)
+		{
+			// lookup 2 connected body/hand parts
+			Point2f partA = points[POSE_PAIRS[n][0]];
+			Point2f partB = points[POSE_PAIRS[n][1]];
+
+			if (partA.x <= 0 || partA.y <= 0 || partB.x <= 0 || partB.y <= 0)
+				continue;
+
+			line(img, partA, partB, Scalar(0, 255, 255), 5);
+			circle(img, partA, 5, Scalar(0, 0, 255), -1);
+			circle(img, partB, 5, Scalar(0, 0, 255), -1);
+		}
+		//영상 출력하는 부분
+		imshow("Skeleton avi", img);
+		//영상 프레임속도 waitKey(Wait_Time)
+		//waitKey(Wait_Time) 를 통한 재생속도 조절
+		if (waitKey(1) == 27)
+			break;
+	}
+
+	cap.release();
+	return 0;
+}
+
+2020.10.2 시작 - 카메라를 이용해서 스켈레톤을 하기위해서 라즈베리파이를 사용하기로하였다. 이후  Python으로 된 OpenSource를 사용해서 기본 틀을 잡아서 이용했다.
+	        첫번쨰 문제점은 파이썬으로 Skeleton을 하기 위해서는 dnn 머신러닝이 필요하다. 또한 뼈대를 찾아야 되기 때문에 뼈대를 찾는방법으로 more hological 골격을 계산
+	        하는 방법을 찾아보았다. 색처리를 이용하여 이미지를 검은색과 흰색으로 이진코드를 바꿔서 만들었다.
+2020.10.9 문제점 - 코드를 이해하기에는 너무 적어서 OpenSource를 추가하여 찾아보기로 하여 https://www.learnopencv.com/deep-learning-based-human-pose-estimation-using-opencv-cpp-python/
+		를 참고하여 Python 코딩을 진행
+2020.10.16 문제점 - 
+Mat frame = imread("single.jpg");
+int inWidth = 368;
+int inHeight = 368;
+Mat inpBlob = blobFromImage(frame, 1.0 / 255, Size(inWidth, inHeight), Scalar(0, 0, 0), false, false);
+에서 resize.cpp:3784: error: (-215:Assertion failed) !ssize.empty() in function 'resize'오류가 발생
+. 오류는 try , except로 저는 해결가능하다고 하지만, 되지 않았다.에러가 나는 부분을 try로 묶고 그다음 
+except로 스트링 e를 제외시켜줍니다. 이 문제는 net = cv2.dnn.readNetFromCaffe(protoFile, weightsFile)을 사용
+하여 해결했다.
+2020.10.23 문제점 - inWidth, inHeight를 frame.shape[1],frame.shape[0] 기존 영상 크기로 넣고 했을때, 문제가 발생하지 않음
+		문제는 해결되었지만, inWidth, inHeight를 상수값을 368,368을 넣었을때, 생기는 문제는 아직
+		이해하지 못했음. 
+2020.11.13 문제점 - 아마 상수넣었을때 문제는 사이즈가 기존 프레임보다 크기때문에 문제가 생긴것 같다. 
+		스트리밍에서 for i in range(len()): 에서 문제가 있어서 len()을0,15으로 고쳐 이용하고,
+		if prob &amp;amp;gt; threshold :의 경우에는 if prob >0.1: 를 이용하여 사용했다.
+2020.11.20 문제점 - 라즈베리파이로 현재 실시간 스트리밍으로 스켈레톤을 해보았지만, 스트리밍 속도가 현저히 낮아서 문제를 해결하기 어려웠음
+		스트리밍 속도의 문제가 아닌, 버퍼링이 걸려 영상이 출력되지 못했다. 
+2020.11.23 문제점 -  이러한 점을 해결하기 위햇 라즈베리파이가 아닌, PC로 직접 스켈레톤을 해서 사진을 다시 해볼때는 가능했지만, 스트리밍시에 똑같은 문제가 발생
+		단, 영상이 출력되지 못한 문제점은 해결하여, 영상은 나왔지만 스트리밍 속도(fps)가 현저히 낮아서 거의 사진 형식으로 영상에 딜레이가 많이 생김
+2020.11.24 문제점 - 11.23일의 문제점을 해결하기 위해서, cv::Mat inpBlob = blobFromImage(img, 1.0 / 255, cv::Size(368,368), cv::Scalar(0, 0, 0), false, false);
+		의 부분에서 cv::Size(368,368)를 cv::Size(150,110)으로 바꾸어서 사이즈를 줄이는 방법을 사용해서 문제점을 해결하려고 했으나, 일정 이상의 사이즈보다
+		작을 경우에 신체에 점이 잡히지 않는 문제점이 있었다. 또한 클경우에는 버퍼링이 걸려서 영상이 매끄럽지 못하다. 하지만, 현재 작게 해도 일정 버퍼링이
+		걸리는 것을 볼 수 있다. 이후 이러한 문제를 해결하기 위해서 ROI방법을 사용해서 영상의 크기 자체를 원하는 부분만 출력되도록 만들 예정이다.  

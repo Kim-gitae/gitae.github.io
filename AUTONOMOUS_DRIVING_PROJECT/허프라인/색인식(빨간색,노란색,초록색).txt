@@ -1,0 +1,44 @@
+import cv2
+import numpy as np
+
+
+cap = cv2.VideoCapture(1)
+#"http://192.168.0.85:8091/?action=stream"
+while (1):
+
+    _, frame = cap.read ()
+
+    hsv = cv2.cvtColor (frame, cv2.COLOR_BGR2HSV)
+
+    # Red range
+    lower_red = np.array ([165, 150, 50])
+    upper_red = np.array ([250, 255, 255])
+
+    mask_red = cv2.inRange (hsv, lower_red, upper_red)
+    res_red = cv2.bitwise_and (frame, frame, mask = mask_red)
+
+    # Green range
+    lower_green = np.array ([50, 100, 100])
+    upper_green = np.array ([68, 255, 255])
+    mask_green = cv2.inRange (hsv, lower_green, upper_green)
+    res_green = cv2.bitwise_and (frame, frame, mask = mask_green)
+
+    # Yellow range
+    lower_yellow = np.array ([20, 100, 100])
+    upper_yellow = np.array ([30, 255, 255])
+    mask_yellow = cv2.inRange (hsv, lower_yellow, upper_yellow)
+    res_yellow = cv2.bitwise_and (frame, frame, mask = mask_yellow)
+
+ 
+    cv2.imshow('frame', frame)
+    cv2.imshow('res_red', res_red)
+    cv2.imshow('res_green', res_green)
+    cv2.imshow('res_yellow', res_yellow)
+
+
+    k = cv2.waitKey(5) & 0xFF
+
+    if k == 27:
+        break
+
+cv2.destroyAllWindows()

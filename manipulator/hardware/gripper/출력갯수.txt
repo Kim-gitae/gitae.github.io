@@ -1,0 +1,8 @@
+Connection_help * 3
+Connection_help2 * 4
+Gearsleft * 1
+Gearsright * 1
+Grippart * 2
+Gripper_body1 * 1
+gripper_Connection * 1
+gripper_support * 1
